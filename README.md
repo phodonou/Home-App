@@ -1,8 +1,7 @@
-# home
+# Home
 
 A new Flutter application.
 
-## Getting Started
-
-For help getting started with Flutter, view our online
-[documentation](https://flutter.io/).
+## About
+This is an app to help me explore the power of Flutter and Firebase.
+This is a simple app that allows you to check if your loved ones are safe.
