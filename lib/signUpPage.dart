@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 FirebaseUser user;
@@ -41,7 +42,6 @@ class signUpPageState extends State<signUpPage>{
     );
 
     Widget EmailTextField = new Container(
-      margin: EdgeInsets.only(bottom: 30.0),
       child: new TextFormField(
         keyboardType: TextInputType.emailAddress, //email address just to prevent auto-capitalization
         controller: emailController,
@@ -74,7 +74,7 @@ class signUpPageState extends State<signUpPage>{
       child: new Column(
         children: <Widget>[ EmailTextField, PasswordTextField],
       ),
-      margin: EdgeInsets.only(top: 100.0, bottom: 50.0),
+      margin: EdgeInsets.only(bottom: 100.0),
     );
 
     Widget SubmitButton = new Center(
@@ -97,6 +97,8 @@ class signUpPageState extends State<signUpPage>{
                         ));
                     try{ //try to sign in user
                       final user = await _auth.createUserWithEmailAndPassword(email: email, password: password); //wait until this completes
+                      await Firestore.instance.collection('user').document()
+                        .setData({'username':username, 'status':'green' });
                       Navigator.popUntil(context, (_) => !Navigator.canPop(context));
                       Navigator.pushReplacementNamed(context, '/main');
                     }
@@ -134,11 +136,15 @@ class signUpPageState extends State<signUpPage>{
       ),
       body: new Form(
           key: _formKey,
-          child: new ListView(
-            children: <Widget>[
-              TextInputs,
-              SubmitButton
-            ],
+          child: new Container(
+            child: new ListView(
+              children: <Widget>[
+                UsernameTextField,
+                TextInputs,
+                SubmitButton
+              ],
+            ),
+            margin: EdgeInsets.only(top: 200.0),
           )),
     );
 
