@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
 import 'dart:collection';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 FirebaseUser currentUser;
-var colorsQueue = new Queue.from(["green", "yellow", "red"]);
+var colorsQueue = new Queue.from(["yellow", "red","green"]);
 
 class mainPage extends StatelessWidget{
 
-  void getCurrentUser() async {
-    currentUser = await _auth.currentUser();
+  String chooseDoc(){
+    String col = colorsQueue.removeLast();
+    colorsQueue.addFirst(col);
+    return col;
   }
 
   pickColor(String color){
@@ -23,6 +26,18 @@ class mainPage extends StatelessWidget{
     else{
       return Colors.red;
     }
+  }
+
+  statusChanged () async {
+    final funcUrl = "https://us-central1-home-30b1a.cloudfunctions.net/statusChanged";
+    try{
+      await http.get(funcUrl);
+      debugPrint("SUUUUCCCCEDDED");
+    }
+    catch(e){
+      debugPrint("FAIILLLED");
+    }
+
   }
 
 
@@ -39,13 +54,35 @@ class mainPage extends StatelessWidget{
             return new ListView(
               children: snapshot.data.documents.map((DocumentSnapshot document) {
                 return new ListTile(
-                  title: new Text(document['username']),
-                  trailing: new GestureDetector(
-                    child: new Icon(Icons.favorite_border, color: pickColor(document['status']),),
-                    onTap: (){
-                      Firestore.instance.collection('user').document()
-                          .setData({'status':'blue' });
-                    },
+                  title: new Text(
+                      document['username'],
+                      style: new TextStyle(
+                          color: Colors.blueAccent,
+                          fontWeight: FontWeight.bold ),
+                  ),
+                  trailing: new Row(
+                    children: <Widget>[
+                      new GestureDetector(
+                        child: new Icon(Icons.favorite_border,
+                          color: pickColor(document['status']),
+                          size: 40.0,),
+                        onTap: (){
+                          Firestore.instance.collection('user').document(document.documentID)
+                              .updateData({'status':chooseDoc()});
+                        },
+                      ),
+
+                      new Container(
+                        child: new RaisedButton(
+                          onPressed: (){
+                            statusChanged();
+                          },
+                          color: Colors.lightBlueAccent,
+                          child: new Text("Notify"),
+                        ),
+                        margin: EdgeInsets.only(left: 30.0),
+                      )
+                    ],
                   ),
                   subtitle: new Container(
                     margin: EdgeInsets.only(top: 10.0),

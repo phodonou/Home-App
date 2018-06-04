@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'mainPage.dart';
 import 'signUpPage.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
-FirebaseUser user;
 final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+final FirebaseMessaging _firebaseMessaging = new FirebaseMessaging();
+var phonePrefs;
+FirebaseUser user;
 
-void main() => runApp(new MyApp());
+void main() => runApp(
+    new MyApp()
+);
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -52,8 +58,52 @@ class MyFormState extends State<MyForm>{
     super.dispose();
   }
 
+    shouldLoginUser(){
+      final future = SharedPreferences.getInstance();
+      future.then((prefs) async {
+        phonePrefs = prefs;
+        if ( !(prefs.getString('email') == null && prefs.getString('password') == null) ){
+          try {
+            _scaffoldKey.currentState.showSnackBar(
+                new SnackBar(duration: new Duration(seconds: 10), content:
+                new Row(
+                  children: <Widget>[
+                    new CircularProgressIndicator(),
+                    new Text("  Signing-In...")
+                  ],
+                ),
+                ));
+            await _auth.signInWithEmailAndPassword(
+                email: prefs.getString('email'),
+                password: prefs.getString('password'));
+            Navigator.pushReplacementNamed(context, '/main');
+          }
+          catch(e){
+            final snackBarFail = new SnackBar(content: new Text("Login Failed"), );
+            _scaffoldKey.currentState.removeCurrentSnackBar();
+            _scaffoldKey.currentState.showSnackBar(snackBarFail);
+          }
+        }
+      });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    _firebaseMessaging.configure(
+      onMessage: (Map<String, dynamic> message){
+
+      }
+    );
+    _firebaseMessaging.requestNotificationPermissions();
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    shouldLoginUser();
 
     Widget EmailTextField = new Container(
       margin: EdgeInsets.only(bottom: 30.0),
@@ -104,7 +154,9 @@ class MyFormState extends State<MyForm>{
                       ));
                   try{ //try to sign in user
                     final user = await _auth.signInWithEmailAndPassword(email: email, password: password); //wait until this completes
-                      Navigator.pushReplacementNamed(context, '/main');
+                    await phonePrefs.setString('email', email);
+                    await phonePrefs.setString('password', password);
+                    Navigator.pushReplacementNamed(context, '/main');
                   }
                   catch(e){ // user login failed
                     final snackBarFail = new SnackBar(content: new Text("Login Failed"), );

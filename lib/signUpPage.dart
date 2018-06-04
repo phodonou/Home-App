@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
-FirebaseUser user;
 final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+final FirebaseMessaging _firebaseMessaging = new FirebaseMessaging();
+FirebaseUser user;
 
 class signUpPage extends StatefulWidget{
   createState() => new signUpPageState();
@@ -99,6 +101,7 @@ class signUpPageState extends State<signUpPage>{
                       final user = await _auth.createUserWithEmailAndPassword(email: email, password: password); //wait until this completes
                       await Firestore.instance.collection('user').document()
                         .setData({'username':username, 'status':'green' });
+                      _firebaseMessaging.subscribeToTopic("all");
                       Navigator.popUntil(context, (_) => !Navigator.canPop(context));
                       Navigator.pushReplacementNamed(context, '/main');
                     }
